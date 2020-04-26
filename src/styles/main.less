@@ -1,0 +1,316 @@
+@import '~reset-css';
+@import '~jquery.fancytree/dist/skin-material/ui.fancytree.less';
+@import '~@material-icons/font/css/outline.css';
+
+@fancy-cst-size: 14px;
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.buddy {
+  @border-color: #AAA8;
+  @border-width: 1.5px;
+  @tab-background-color: #FFC;
+  @button-background-color: #CCC;
+  @input-background-color: #FFF8;
+  @text-color: #444;
+  @border-radius: 0.45em;
+  @padding-margin: 0.25em;
+
+  font-family: sans-serif;
+  display: flex;
+  flex-wrap: wrap;
+  color: @text-color;
+  padding: @padding-margin;
+
+  .tabs-container {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    >.tabs {
+      overflow: auto;
+      min-height: min-content;
+      >* {
+        display: flex;
+        >.tab {
+          flex: auto;
+          padding: @padding-margin;
+          border: outset @border-width @border-color;
+          border-top-left-radius: @border-radius;
+          border-top-right-radius: @border-radius;
+          border-bottom: none;
+          background-color: @tab-background-color;
+          text-align: center;
+          outline: none;
+          cursor: pointer;
+          user-select: none;
+          &.hidden {
+            display: none;
+          }
+          &.inactive {
+            border-bottom: inset @border-width @border-color;
+          }
+          &.active {
+            border-bottom: none;
+          }
+        }
+      }
+    }
+    >.contents {
+      flex: auto;
+      display: flex;
+      border: outset @border-width @border-color;
+      border-top: none;
+      border-bottom-left-radius: @border-radius;
+      border-bottom-right-radius: @border-radius;
+      background-color: @tab-background-color;
+      padding: @padding-margin;
+      >* {
+        flex: 1;
+        width: 100%;
+        height: 100%;
+      }
+      >.inactive {
+        display: none;
+      }
+      // >.active {}
+    }
+  }
+
+  .options {
+    >.option {
+      display: inline-block;
+      position: relative;
+      width: 96px;
+      height: 96px;
+      margin: @padding-margin;
+      border: dashed @border-width transparent;
+      cursor: pointer;
+      >* {
+        pointer-events: none;
+      }
+      >img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: center;
+      }
+      >.caption {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        text-overflow: ellipsis;
+        text-align: center;
+        height: 1.5em;
+        padding: 2px;
+        background-color: #444;
+        color: #FFF;
+      }
+      &.selected {
+        border-color: #080;
+      }
+    }
+  }
+
+  >* {
+    flex: 1 1 100%;
+    @media (min-width: 800px) {
+      & { flex: 1 1 50%; }
+    }
+  }
+
+  .preview-container {
+    position: relative;
+    >.overlay-buttons {
+      position: absolute;
+      z-index: 5;
+      top: 1em;
+      left: 1em;
+      display: flex;
+      flex-direction: column;
+      >button {
+        flex: initial;
+      }
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+    }
+    >.description-panel {
+      position: absolute;
+      z-index: 10;
+      display: none;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: #0008;
+      &.show {
+        display: block;
+      }
+    }
+  }
+
+  .editor {
+    display: flex;
+    flex-wrap: wrap;
+    position: relative;
+    >* { flex: 1 }
+    form {
+      >.field {
+        margin: @padding-margin 0;
+        display: flex;
+        align-items: center;
+        >label {
+          margin: 0 @padding-margin;
+        }
+        >input, >textarea {
+          margin: 0 @padding-margin;
+          flex: 1;
+        }
+      }
+    }
+
+    .tree {
+      flex: auto;
+      padding: @padding-margin;
+      ul.fancytree-container {
+        overflow-y: auto;
+      }
+    }
+  }
+
+  .vertical-divider {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .buttons {
+    margin: @padding-margin 0;
+    display: flex;
+    align-items: center;
+    >* {
+      margin: 0 @padding-margin;
+    }
+    >.caption {
+      flex: auto;
+      display: inline-block;
+      text-align: center;
+    }
+    >button {
+      flex: initial;
+    }
+  }
+
+  button {
+    padding: @padding-margin;
+    background-color: transparent;
+    color: @text-color;
+    border: solid @border-width transparent;
+    border-radius: @border-radius;
+    cursor: pointer;
+    &:hover, &:active, &:focus {
+      background-color: @button-background-color;
+      border-color: @border-color;
+    }
+    &:hover {
+      border-style: outset;
+    }
+    &:active {
+      border-style: inset;
+    }
+    &:disabled {
+      opacity: 0.5;
+      border-style: solid;
+      border-color: transparent;
+      cursor: not-allowed;
+    }
+  }
+
+  input, textarea, .fancytree-container {
+    width: 100%;
+    height: 100%;
+    padding: @padding-margin;
+    background-color: @input-background-color;
+    border: solid @border-width @border-color;
+    border-radius: @border-radius;
+    &:active:not(:disabled), &:focus:not(:disabled) {
+      border-style: inset;
+    }
+    &:disabled {
+      opacity: 50%;
+      cursor: not-allowed;
+    }
+  }
+
+  .float-panel {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 50%;
+    min-height: 5em;
+    max-height: 80%;
+    transform: translate(-50%, -50%);
+    overflow-y: auto;
+    overflow-x: none;
+    text-align: center;
+    background-color: @tab-background-color;
+    border: outset @border-width @border-color;
+    border-radius: @border-radius;
+    >* {
+      padding: @padding-margin;
+    }
+    h3 {
+      text-align: left;
+      font-size: bigger;
+      font-weight: bold;
+    }
+    hr {
+      width: 80%;
+      border-top: dashed @border-width @text-color;
+      padding: 0;
+    }
+  }
+
+  .content {
+    text-align: left;
+    h1, h2, h3, h4, h5, h6 {
+      text-align: left;
+      font-size: bigger;
+      font-weight: bold;
+    }
+    p { text-align: justify; }
+    blockquote { margin-left: 1em; }
+    em { font-style: italic; }
+    strong { font-weight: bold; }
+    ul { list-style-type: disc; }
+    ol { list-style-type: decimal; }
+    li { display: list-item; }
+  }
+
+  .fancytree-plain span.fancytree-active span.fancytree-title {
+    &, &:hover {
+      background-color: #5558;
+      color: #FFF;
+    }
+    & input.fancytree-edit-input {
+      border: none;
+      border-radius: 0;
+      padding: 0 @padding-margin;
+    }
+  }
+
+  *:focus {
+    outline: none;
+  }
+
+  &, & * {
+    box-sizing: border-box;
+  }
+}

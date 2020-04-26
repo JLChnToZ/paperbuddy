@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "sourceMap": true,
+    "noImplicitAny": true,
+    "module": "commonjs",
+    "target": "es2017",
+    "strict": true,
+    "lib": ["dom", "webworker", "es5", "es6"],
+    "typeRoots": ["node_modules/@types"],
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "importHelpers": true,
+    "paths" :{
+      "*": ["typings/*"],
+      // "worker-loader?*": ["typings/worker"],
+      // "worker-loader!*": ["typings/worker"]
+    },
+    "experimentalDecorators": true
+  },
+  "include": [
+    "./src/**/*"
+  ]
+}

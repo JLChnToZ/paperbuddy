@@ -1,0 +1,42 @@
+{
+  "name": "paperbuddy",
+  "version": "0.1.0",
+  "description": "Paper Buddy Maker",
+  "main": "index.js",
+  "author": "JLChnToZ <jeremylam619@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "webpack"
+  },
+  "devDependencies": {
+    "awesome-typescript-loader": "^5.2.1",
+    "clean-webpack-plugin": "^3.0.0",
+    "css-loader": "^3.5.3",
+    "cssnano-preset-advanced": "^4.0.7",
+    "expose-loader": "^0.7.5",
+    "file-loader": "^6.0.0",
+    "html-webpack-plugin": "^4.2.0",
+    "less-loader": "^6.0.0",
+    "mini-css-extract-plugin": "^0.9.0",
+    "optimize-css-assets-webpack-plugin": "^5.0.3",
+    "source-map-loader": "^0.2.4",
+    "style-loader": "^1.2.0",
+    "terser-webpack-plugin": "^2.3.5",
+    "typescript": "^3.8.3",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11"
+  },
+  "dependencies": {
+    "@material-icons/font": "^1.0.0",
+    "@types/jquery": "^3.3.35",
+    "@types/jquery.fancytree": "^0.0.4",
+    "@types/marked": "^0.7.4",
+    "@types/uuid": "^7.0.3",
+    "jquery": "^3.5.0",
+    "jquery.fancytree": "^2.35.0",
+    "jszip": "^3.4.0",
+    "marked": "^1.0.0",
+    "reset-css": "^5.0.1",
+    "tslib": "^1.11.1"
+  }
+}
