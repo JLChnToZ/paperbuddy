@@ -1,3 +1,14 @@
+import { LanguageDef } from './lang';
+
+export interface Config {
+  isEditor?: boolean;
+  src?: Blob | Uint8Array | ArrayBuffer | number[] | string;
+  lang?: LanguageDef;
+  canReset?: boolean;
+  canOpen?: boolean;
+  canSave?: boolean;
+}
+
 export interface Data {
   title?: string;
   description?: string;

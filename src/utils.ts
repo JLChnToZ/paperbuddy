@@ -8,6 +8,7 @@ export const generateUniqueId = uuidV4;
 
 /** Lazily binds a method in a class and overrides as bound results in instances. */
 export const Bind: MethodDecorator = (target, key, descriptor) => {
+  const Type: NewableFunction = target.constructor;
   if(descriptor.get || descriptor.set)
     throw new TypeError(
       formatName(target, key) +
@@ -15,22 +16,25 @@ export const Bind: MethodDecorator = (target, key, descriptor) => {
       'which is not suppported to use decorator to bind it, ' +
       'consider to manually use Function.bind() in the getter/setter.',
     );
-  const { value: originalValue } = descriptor;
-  if(typeof originalValue !== 'function')
-    throw new TypeError(formatName(target, key) + ' is not a function.');
+  let orgValue = descriptor.value;
   const { writable, enumerable } = descriptor;
-  const defineValue = (instance: any, value: any) => instance !== target && 
-    Object.defineProperty(instance, key, {
+  descriptor.get = function(this: any) {
+    if(this === target) return orgValue;
+    const value = typeof orgValue === 'function' ? orgValue.bind(this) : orgValue;
+    for(let o = this; o instanceof Type; o = Object.getPrototypeOf(o))
+      if(Object.prototype.hasOwnProperty.call(o, key))
+        return value;
+    Object.defineProperty(this, key, {
       value, configurable: true, writable, enumerable,
     });
-  descriptor.get = function(this: any) {
-    const value = originalValue.bind(this);
-    defineValue(this, value);
     return value;
   };
   if(writable) {
     descriptor.set = function(this: any, value: any) {
-      defineValue(this, value);
+      if(this === target) return orgValue = value;
+      Object.defineProperty(this, key, {
+        value, configurable: true, writable: true, enumerable: true,
+      });
     };
     delete descriptor.writable;
   }

@@ -1,11 +1,13 @@
+import './styles/main.less';
 import JSZip, { OutputType } from 'jszip';
 import { Bind, mapClone, mapRun, delay, EMPTY_GIF, canvasToBlobAsync } from './utils';
 import { Tabs } from './tabs';
-import { Data, LayerData, EntryData, PartData } from './data-structs';
+import { Data, LayerData, EntryData, PartData, Config } from './data-structs';
 import { Editor } from './editor';
-import { defaultLanguage } from './lang';
+import { defaultLanguage, LanguageDef } from './lang';
 import { Choose } from './choose';
 import marked from 'marked';
+import { saveFile, openFile } from './file-helper';
 
 interface Condition {
   index: number;
@@ -30,6 +32,7 @@ export class Buddy {
   public pack?: JSZip;
   private loadDataPromise: Promise<Data>;
   private data?: Data;
+  private lang: LanguageDef;
 
   private root: HTMLElement;
   private layerData = new Map<string, LayerData>();
@@ -53,11 +56,10 @@ export class Buddy {
   
   constructor(
     root: HTMLElement | string,
-    src?: Blob | Uint8Array | ArrayBuffer | number[] | string,
-    public isEditor?: boolean,
-    private lang = defaultLanguage,
+    config: Config = {},
   ) {
-    this.loadPackPromise = src ? JSZip.loadAsync(src) : new JSZip();
+    this.lang = config.lang || defaultLanguage;
+    this.loadPackPromise = config.src ? JSZip.loadAsync(config.src) : new JSZip();
     this.loadDataPromise = loadData(this.loadPackPromise);
     this.root = typeof root === 'string' ? document.querySelector<HTMLElement>(root)! : root;
     this.root.classList.add('buddy');
@@ -69,8 +71,8 @@ export class Buddy {
     this.context = this.canvas.getContext('2d')!;
     this.offscreenCanvas = new OffscreenCanvas(512, 512);
     this.offscreenContext = this.offscreenCanvas.getContext('2d')!;
-    if(isEditor) {
-      this.editor = new Editor(this.root, this.loadPackPromise, this.images, this.loadDataPromise, lang)
+    if(config.isEditor) {
+      this.editor = new Editor(this.root, this.loadPackPromise, this.images, this.loadDataPromise, this.lang)
       .on('refresh', this.refresh)
       .on('composite', this.composite);
       this.playerRoot = this.editor.playerRoot;
@@ -80,6 +82,24 @@ export class Buddy {
     this.playerTabs = new Tabs(this.playerRoot);
     const overlayButtons = canvasContainer.appendChild(document.createElement('div'));
     overlayButtons.className = 'overlay-buttons';
+    if(config.isEditor && config.canReset) {
+      const button = overlayButtons.appendChild(document.createElement('button'));
+      const icon = button.appendChild(document.createElement('i'));
+      icon.className = 'material-icons md-18 md-insert_drive_file';
+      button.addEventListener('click', this.reset);
+    }
+    if(config.canOpen) {
+      const button = overlayButtons.appendChild(document.createElement('button'));
+      const icon = button.appendChild(document.createElement('i'));
+      icon.className = 'material-icons md-18 md-folder_open';
+      button.addEventListener('click', this.onOpenClick);
+    }
+    if(config.isEditor && config.canSave) {
+      const button = overlayButtons.appendChild(document.createElement('button'));
+      const icon = button.appendChild(document.createElement('i'));
+      icon.className = 'material-icons md-18 md-save';
+      button.addEventListener('click', this.onSaveClick);
+    }
     {
       const button = overlayButtons.appendChild(document.createElement('button'));
       const icon = button.appendChild(document.createElement('i'));
@@ -102,7 +122,7 @@ export class Buddy {
       this.descriptionContent.className = 'content';
       descriptionPanelFloat.appendChild(document.createElement('hr'));
       const closeButton = descriptionPanelFloat.appendChild(document.createElement('button'));
-      closeButton.textContent = lang.close;
+      closeButton.textContent = this.lang.close;
       closeButton.addEventListener('click', this.hideDescriptionPanel);
     }
     this.init();
@@ -203,12 +223,32 @@ export class Buddy {
   @Bind
   private async onDownloadClick() {
     const blob = await canvasToBlobAsync(this.canvas);
-    if(!blob) return;
-    const temp = document.createElement('a');
-    temp.href = URL.createObjectURL(blob);
-    temp.download = `${Date.now()}.png`;
-    temp.click();
-    URL.revokeObjectURL(temp.href);
+    if(blob) saveFile(blob, { fileName: `${Date.now()}.png` });
+  }
+
+  @Bind
+  public reset() {
+    this.reload(new JSZip());
+  }
+
+  @Bind
+  private async onOpenClick() {
+    const [pack] = await openFile({ accept: '*.pack' });
+    if(pack) this.reload(JSZip.loadAsync(pack));
+  }
+
+  private reload(loadPackPromise: JSZip | Promise<JSZip>) {
+    this.loadPackPromise = loadPackPromise;
+    this.loadDataPromise = loadData(this.loadPackPromise);
+    this.editor?.reset(this.loadPackPromise, this.loadDataPromise);
+    this.init();
+    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+  }
+
+  @Bind
+  private async onSaveClick() {
+    const blob = await this.repack('blob');
+    if(blob) saveFile(blob, { fileName: `${Date.now()}.pack` });
   }
 
   @Bind
@@ -317,7 +357,6 @@ async function loadData(packPromise: PromiseLike<JSZip> | JSZip) {
   let data: Data | undefined;
   try {
     const pack = await packPromise;
-    console.log('Pack ready');
     const dataFile = pack.file('data.json');
     if(dataFile) data = JSON.parse(await dataFile.async('text'));
   } catch(e) { console.error(e); }
@@ -332,6 +371,5 @@ async function loadData(packPromise: PromiseLike<JSZip> | JSZip) {
     if(!data.layers) data.layers = [];
     if(!data.categories) data.categories = [];
   }
-  console.log('Data ready');
   return data;
 }

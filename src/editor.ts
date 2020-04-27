@@ -16,8 +16,9 @@ import {
   CategoryData,
 } from './data-structs';
 import { Tabs } from './tabs';
-import { generateUniqueId, Bind, preventDefault } from './utils';
+import { generateUniqueId, Bind, preventDefault, delay } from './utils';
 import { LanguageDef } from './lang';
+import { openFile } from './file-helper';
 
 const defaultOptions: Fancytree.FancytreeOptions = {
   extensions: ['edit', 'dnd5', 'multi', 'glyph'],
@@ -69,13 +70,13 @@ export class Editor extends EventEmitter {
   public data?: Data;
   private relatedLayerNodes = new Map<string, Set<string>>();
 
+  private editorTabs: Tabs;
   private editorRoot: HTMLElement;
   public playerRoot: HTMLElement;
   private titleEdit: HTMLInputElement;
   private descriptionEdit: HTMLTextAreaElement;
   private widthEdit: HTMLInputElement;
   private heightEdit: HTMLInputElement;
-  private addFileHandler: HTMLInputElement;
   private layerTree: Fancytree.Fancytree;
   private optTree: Fancytree.Fancytree;
   private pack?: JSZip;
@@ -94,11 +95,11 @@ export class Editor extends EventEmitter {
 
     const editorTabsRoot = this.root.appendChild(document.createElement('div'));
     editorTabsRoot.addEventListener('submit', preventDefault, true);
-    const editorTabs = new Tabs(editorTabsRoot);
-    this.editorRoot = editorTabs.contentOf(editorTabs.addTab(lang.edit))!;
+    this.editorTabs = new Tabs(editorTabsRoot);
+    this.editorRoot = this.editorTabs.contentOf(this.editorTabs.addTab(lang.edit))!;
     this.editorRoot.className = 'editor';
-    this.playerRoot = editorTabs.contentOf(editorTabs.addTab(lang.play))!;
-    editorTabs.on('select', this.onEditTabSelect);
+    this.playerRoot = this.editorTabs.contentOf(this.editorTabs.addTab(lang.play))!;
+    this.editorTabs.on('select', this.onEditTabSelect);
 
     const leftPanel = this.editorRoot.appendChild(document.createElement('div'));
     leftPanel.className = 'vertical-divider';
@@ -162,11 +163,6 @@ export class Editor extends EventEmitter {
         const icon = addLayerButton.appendChild(document.createElement('i'));
         icon.className = `${glyphMaps._addClass} md-add`;
         addLayerButton.addEventListener('click', this.onClickAddLayer);
-        this.addFileHandler = document.createElement('input');
-        this.addFileHandler.type = 'file';
-        this.addFileHandler.accept = 'image/*';
-        this.addFileHandler.multiple = true;
-        this.addFileHandler.addEventListener('change', this.onFileSelected);
       }
       {
         this.deleteLayerButton = buttons.appendChild(document.createElement('button'));
@@ -194,6 +190,7 @@ export class Editor extends EventEmitter {
           dragDrop: this.layerDrop,
         },
         select: this.onLayerSelectChange,
+        blurTree: onBlurTree,
       } as Fancytree.FancytreeOptions, defaultOptions));
       this.layerTree = $container.fancytree('getTree');
     }
@@ -239,9 +236,20 @@ export class Editor extends EventEmitter {
           dragDrop: this.optDrop,
         },
         select: this.onOptSelectChange,
-      }, defaultOptions));
+        blurTree: onBlurTree,
+      } as Fancytree.FancytreeOptions, defaultOptions));
       this.optTree = $container.fancytree('getTree');
     }
+    this.waitForDataLoad();
+  }
+
+  public reset(
+    loadPackPromise: Promise<JSZip> | JSZip,
+    loadDataPromise: Promise<Data>,
+  ) {
+    this.editorTabs.selectTab(0);
+    this.loadPackPromise = loadPackPromise;
+    this.loadDataPromise = loadDataPromise;
     this.waitForDataLoad();
   }
 
@@ -250,14 +258,12 @@ export class Editor extends EventEmitter {
     return selection?.length && selection.map(x => (x.data.refData as LayerData).fileName) || null;
   }
 
-  public async handleFiles(files: File | FileList, addTo?: Fancytree.FancytreeNode, mode?: string) {
+  public async handleFiles(files: File | FileList | ArrayLike<File>, addTo?: Fancytree.FancytreeNode, mode?: string) {
     if(files instanceof File)
       return this.handleFile(files, addTo, mode);
     const p: Promise<void>[] = [];
-    for(let i = 0; i < files.length; i++) {
-      const file = files.item(i);
-      if(file) p.push(this.handleFile(file, addTo, mode));
-    }
+    for(let i = 0; i < files.length; i++)
+      p.push(this.handleFile(files[i], addTo, mode));
     await Promise.all(p);
     this.syncLayerData();
   }
@@ -304,8 +310,7 @@ export class Editor extends EventEmitter {
     this.descriptionEdit.value = this.data.description || '';
     this.widthEdit.value = this.data.width.toString();
     this.heightEdit.value = this.data.height.toString();
-    console.log(this.optTree.getFirstChild());
-    this.optTree.reload(this.data.categories.map(this.cat2Node));
+    this.optTree.reload(this.data.categories.map(this.cat2Node, this));
     this.layerTree.reload(this.data.layers.map(layer2Node));
   }
 
@@ -349,15 +354,11 @@ export class Editor extends EventEmitter {
   }
 
   @Bind
-  private onClickAddLayer(e: Event) {
-    this.addFileHandler.value = '';
-    this.addFileHandler.click();
-  }
-
-  @Bind
-  private onFileSelected(e: Event) {
-    if(this.addFileHandler.files)
-      this.handleFiles(this.addFileHandler.files);
+  private async onClickAddLayer(e: Event) {
+    this.handleFiles(await openFile({
+      multiple: true,
+      accept: 'image/*'
+    }));
   }
 
   @Bind
@@ -563,10 +564,12 @@ export class Editor extends EventEmitter {
     }
     return {
       title: cat.label,
-      nodeType: 'entry',
-      refData: cat,
       icon: glyphMaps.entry,
       children,
+      data: {
+        nodeType: 'entry',
+        refData: cat,
+      },
     };
   }
 
@@ -574,9 +577,11 @@ export class Editor extends EventEmitter {
     const partNode = {
       key: generateUniqueId(),
       title: part.layer.substr(0, part.layer.lastIndexOf('.')),
-      nodeType: 'part',
-      refData: part,
       icon: glyphMaps.part,
+      data: {
+        nodeType: 'part',
+        refData: part,
+      },
     };
     let relatedNodeSet = this.relatedLayerNodes.get(partNode.title);
     if(!relatedNodeSet) {
@@ -590,6 +595,12 @@ export class Editor extends EventEmitter {
 
 function alwaysTrue() {
   return true;
+}
+
+async function onBlurTree(e: Event, data: Fancytree.EventData) {
+  await delay(100);
+  (data.tree as any).selectAll(false);
+  data.tree.activateKey(false);
 }
 
 function optDragEnter(targetNode: Fancytree.FancytreeNode, data: any) {
@@ -681,10 +692,12 @@ function layerDragEnter(targetNode: Fancytree.FancytreeNode, data: any) {
 
 function layer2Node(layer: LayerData) {
   return {
-    text: layer.fileName.substring(0, layer.fileName.length - 4),
-    nodeType: 'layer',
-    refData: layer,
+    title: layer.fileName.substring(0, layer.fileName.length - 4),
     icon: glyphMaps.layer,
+    data: {
+      nodeType: 'layer',
+      refData: layer,
+    },
   };
 }
 

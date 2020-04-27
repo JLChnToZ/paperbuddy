@@ -1,3 +1,7 @@
-import './styles/main.less';
 import { Buddy } from './buddy';
-new Buddy(document.body, undefined, true);
+new Buddy(document.body, {
+  isEditor: true,
+  canReset: true,
+  canOpen: true,
+  canSave: true,
+});

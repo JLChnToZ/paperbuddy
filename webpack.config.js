@@ -78,7 +78,10 @@ module.exports = {
       $: 'jquery',
       jQuery: 'jquery'
     }),
-    new HtmlWebpackPlugin(),
+    new HtmlWebpackPlugin({
+      title: 'Paper Buddy',
+      hash: true,
+    }),
     new MiniCssExtractPlugin(),
   ],
 };

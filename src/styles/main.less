@@ -11,14 +11,17 @@ html, body {
 }
 
 .buddy {
-  @border-color: #AAA8;
+  @border-color: #A868;
   @border-width: 1.5px;
-  @tab-background-color: #FFC;
-  @button-background-color: #CCC;
+  @tab-background-color: #FEC;
+  @button-background-color: #FFD;
   @input-background-color: #FFF8;
-  @text-color: #444;
+  @selected-color: #840;
+  @text-color: #642;
   @border-radius: 0.45em;
   @padding-margin: 0.25em;
+  @highlight-background-color: #8408;
+  @highlight-fore-color: #FFF;
 
   font-family: sans-serif;
   display: flex;
@@ -88,6 +91,7 @@ html, body {
       height: 96px;
       margin: @padding-margin;
       border: dashed @border-width transparent;
+      border-radius: @border-radius;
       cursor: pointer;
       >* {
         pointer-events: none;
@@ -97,6 +101,7 @@ html, body {
         height: 100%;
         object-fit: contain;
         object-position: center;
+        border-radius: @border-radius * 1.1;
       }
       >.caption {
         position: absolute;
@@ -107,11 +112,13 @@ html, body {
         text-align: center;
         height: 1.5em;
         padding: 2px;
-        background-color: #444;
+        background-color: #4448;
         color: #FFF;
+        border-bottom-left-radius: @border-radius;
+        border-bottom-right-radius: @border-radius;
       }
       &.selected {
-        border-color: #080;
+        border-color: @selected-color;
       }
     }
   }
@@ -268,7 +275,7 @@ html, body {
     }
     h3 {
       text-align: left;
-      font-size: bigger;
+      font-size: 200%;
       font-weight: bold;
     }
     hr {
@@ -294,15 +301,19 @@ html, body {
     li { display: list-item; }
   }
 
-  .fancytree-plain span.fancytree-active span.fancytree-title {
-    &, &:hover {
-      background-color: #5558;
-      color: #FFF;
-    }
-    & input.fancytree-edit-input {
-      border: none;
-      border-radius: 0;
-      padding: 0 @padding-margin;
+  .fancytree-plain {
+    span.fancytree-active, span.fancytree-selected {
+      span.fancytree-title {
+        &, &:hover {
+          background-color: @highlight-background-color;
+          color: @highlight-fore-color;
+        }
+        & input.fancytree-edit-input {
+          border: none;
+          border-radius: 0;
+          padding: 0 @padding-margin;
+        }
+      }
     }
   }
 
@@ -312,5 +323,10 @@ html, body {
 
   &, & * {
     box-sizing: border-box;
+  }
+
+  ::selection {
+    background-color: @highlight-background-color;
+    color: @highlight-fore-color;
   }
 }
