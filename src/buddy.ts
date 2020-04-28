@@ -11,7 +11,7 @@ import { saveFile, openFile } from './file-helper';
 import { Core } from './core';
 import { canvasToBlobAsync } from './offscreen-canvas';
 
-const classNameBase = 'material-icons md-18 ';
+const classNameBase = 'material-icons md-24 ';
 
 export class Buddy extends Core {
   public editor?: Editor;
@@ -107,6 +107,11 @@ export class Buddy extends Core {
     const removeCount = this.selectionHandler.length - this.conditionMapping.length;
     if(removeCount > 0)
       this.selectionHandler.splice(this.selectionHandler.length - removeCount, removeCount).forEach(mapRun, 'dispose');
+  }
+
+  @Bind
+  public composite(refreshLayers = true, selectedLayers?: string[]) {
+    super.composite(refreshLayers, selectedLayers);
   }
 
   @Bind

@@ -28,7 +28,6 @@ export class Core {
   public pack?: JSZip;
   public data?: Data;
 
-  // public selection: OptionsState[] = [];
   public images = new Map<string, CanvasImageSource>();
   protected conditionMapping: ConditionMapping[] = [];
   private conditionAcc: Condition[] = [];
@@ -38,7 +37,7 @@ export class Core {
   private baseLayers = new Set<string>();
   private enabledLayers = new Set<string>();
   protected canvas: HTMLCanvasElement;
-  private context: CanvasRenderingContext2D;
+  private context?: CanvasRenderingContext2D | null;
   private offscreenCanvas: HTMLCanvasElement | OffscreenCanvas;
   private offscreenContext: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
@@ -46,14 +45,20 @@ export class Core {
     this.loadPackPromise = src ? JSZip.loadAsync(src) : Promise.resolve(new JSZip());
     this.loadDataPromise = loadData(this.loadPackPromise);
     this.canvas = getCanvas(512, 512);
-    this.context = this.canvas.getContext('2d')!;
     this.offscreenCanvas = getOffscreenCanvas(512, 512);
-    this.offscreenContext = this.offscreenCanvas.getContext('2d')!;
+    const offscreenContext = this.offscreenCanvas.getContext('2d');
+    if(!offscreenContext)
+      throw new Error('Failed to initialize 2D canvas context.');
+    this.offscreenContext = offscreenContext;
     this.init();
   }
   
   public composite(refreshLayers = true, selectedLayers?: string[]) {
     const data = this.data!;
+    if(!this.context)
+      this.context = this.canvas.getContext('2d');
+    if(!this.context)
+      throw new Error('Failed to initialize 2D canvas context.');
     this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     if(selectedLayers) {
       for(const layer of data.layers) {
@@ -83,7 +88,7 @@ export class Core {
     this.loadPackPromise = loadPackPromise;
     this.loadDataPromise = loadData(this.loadPackPromise);
     this.init();
-    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.context?.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
   protected async init() {

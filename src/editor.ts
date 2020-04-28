@@ -381,13 +381,13 @@ export class Editor extends EventEmitter {
   @Bind
   private onLayerSelectChange() {
     this.deleteLayerButton.disabled = !this.layerTree.getSelectedNodes(true).length;
-    this.emit('composite', true, this.isEditMode);
+    this.emit('composite', true, this.isEditMode && this.getSelectedLayers());
   }
 
   @Bind
   private syncLayerData() {
     this.syncData(true, false);
-    this.emit('composite', true, this.isEditMode);
+    this.emit('composite', true, this.isEditMode && this.getSelectedLayers());
   }
 
   @Bind
