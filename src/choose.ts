@@ -32,6 +32,14 @@ export class Choose extends EventEmitter {
     this.visible = tab.selectedIndex === tab.indexOf(this.header);
   }
 
+  public show(display = true) {
+    const index = this.tab.indexOf(this.header);
+    if(display)
+      this.tab.show(index);
+    else
+      this.tab.hide(index);
+  }
+
   public update(entry: EntryData, index: number) {
     if(!entry.entries) return;
     this.header.textContent = entry.label;

@@ -11,16 +11,18 @@ export const Bind: MethodDecorator = (target, key, descriptor) => {
   const Type: NewableFunction = target.constructor;
   if(descriptor.get || descriptor.set)
     throw new TypeError(
-      formatName(target, key) +
-      ' has already defined a getter/setter, ' +
+      `${Type.name}.${key.toString()} ` +
+      'has already defined a getter/setter, ' +
       'which is not suppported to use decorator to bind it, ' +
       'consider to manually use Function.bind() in the getter/setter.',
     );
   let orgValue = descriptor.value;
   const { writable, enumerable } = descriptor;
-  descriptor.get = function(this: any) {
+  descriptor.get = function(this: Object) {
     if(this === target) return orgValue;
-    const value = typeof orgValue === 'function' ? orgValue.bind(this) : orgValue;
+    const value = typeof orgValue === 'function' ?
+      Function.prototype.bind.call(orgValue, this) :
+      orgValue;
     for(let o = this; o instanceof Type; o = Object.getPrototypeOf(o))
       if(Object.prototype.hasOwnProperty.call(o, key))
         return value;
@@ -30,7 +32,7 @@ export const Bind: MethodDecorator = (target, key, descriptor) => {
     return value;
   };
   if(writable) {
-    descriptor.set = function(this: any, value: any) {
+    descriptor.set = function(this: Object, value: any) {
       if(this === target) return orgValue = value;
       Object.defineProperty(this, key, {
         value, configurable: true, writable: true, enumerable: true,
@@ -40,12 +42,6 @@ export const Bind: MethodDecorator = (target, key, descriptor) => {
   }
   delete descriptor.value;
   return descriptor;
-}
-
-function formatName(target: unknown, key: PropertyKey) {
-  if(target instanceof Function)
-    return `${target.name}.${key.toString()}`;
-  return `<${typeof target}>.${key.toString()}`;
 }
 
 export function mapClone<T>(value: T): T {
@@ -65,12 +61,6 @@ export function delay(ms: number, value?: unknown) {
 
 export function delayFrame() {
   return new Promise<number>(resolve => requestAnimationFrame(resolve));
-}
-
-export function canvasToBlobAsync(canvas: HTMLCanvasElement | OffscreenCanvas, type?: string, quality?: number) {
-  return canvas instanceof OffscreenCanvas ?
-    canvas.convertToBlob({ type, quality }) :
-    new Promise<Blob | null>(resolve => canvas.toBlob(resolve, type, quality));
 }
 
 export function preventDefault(e: Event) {

@@ -255,7 +255,7 @@ export class Editor extends EventEmitter {
 
   public getSelectedLayers() {
     const selection = this.layerTree.getSelectedNodes();
-    return selection?.length && selection.map(x => (x.data.refData as LayerData).fileName) || null;
+    return selection?.length && selection.map(x => (x.data.refData as LayerData).fileName) || [];
   }
 
   public async handleFiles(files: File | FileList | ArrayLike<File>, addTo?: Fancytree.FancytreeNode, mode?: string) {
@@ -328,7 +328,7 @@ export class Editor extends EventEmitter {
         break;
       }
     }
-    this.emit('composite', true, this.isEditMode);
+    this.emit('composite', true, this.isEditMode && this.getSelectedLayers());
   }
 
   @Bind
