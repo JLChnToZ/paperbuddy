@@ -4,4 +4,5 @@ new Buddy(document.body, {
   canReset: true,
   canOpen: true,
   canSave: true,
+  controlDocumentTitle: true,
 });

@@ -15,6 +15,8 @@ const classNameBase = 'material-icons md-24 ';
 
 export class Buddy extends Core {
   public editor?: Editor;
+  private controlDocumentTitle?: boolean;
+  private orgDocumentTitle?: string;
   private lang: LanguageDef;
 
   private root: HTMLElement;
@@ -91,6 +93,10 @@ export class Buddy extends Core {
       closeButton.textContent = this.lang.close;
       closeButton.addEventListener('click', this.hideDescriptionPanel);
     }
+    if(config.controlDocumentTitle) {
+      this.controlDocumentTitle = true;
+      this.orgDocumentTitle = document.title;
+    }
   }
 
   @Bind
@@ -100,13 +106,14 @@ export class Buddy extends Core {
       if(this.selectionHandler[i])
         this.selectionHandler[i].value = 0;
       else
-        this.selectionHandler[i] = new Choose(this.playerTabs, this.requestPreview)
+        this.selectionHandler[i] = new Choose(this.playerTabs, this.getSelectionPreview)
         .on('select', this.select);
       this.selectionHandler[i].update(this.conditionMapping[i].entry, i);
     }
     const removeCount = this.selectionHandler.length - this.conditionMapping.length;
     if(removeCount > 0)
       this.selectionHandler.splice(this.selectionHandler.length - removeCount, removeCount).forEach(mapRun, 'dispose');
+    this.updateDocumentTitle();
   }
 
   @Bind
@@ -123,6 +130,12 @@ export class Buddy extends Core {
     super.refreshLayers();
     for(let i = 0; i < this.selectionHandler.length; i++)
       this.selectionHandler[i].show(this.conditionMapping[i]?.enabled);
+  }
+
+  private updateDocumentTitle() {
+    if(!this.controlDocumentTitle) return;
+    const { title, orgDocumentTitle } = this;
+    document.title = title ? `${title} - ${orgDocumentTitle}` : orgDocumentTitle!;
   }
 
   @Bind
@@ -164,8 +177,8 @@ export class Buddy extends Core {
   }
 
   @Bind
-  public requestPreview(index: number, value: number) {
-    return super.requestPreview(index, value);
+  public getSelectionPreview(index: number, value: number) {
+    return super.getSelectionPreview(index, value);
   }
 
   @Bind
@@ -176,31 +189,11 @@ export class Buddy extends Core {
   protected async init() {
     await super.init();
     if(!this.editor) this.refresh();
+    this.updateDocumentTitle();
   }
 
   public repack<T extends OutputType>(type: T = 'blob' as T) {
     this.editor?.syncData();
     return super.repack(type);
   }
-}
-
-async function loadData(packPromise: PromiseLike<JSZip> | JSZip) {
-  let data: Data | undefined;
-  try {
-    const pack = await packPromise;
-    const dataFile = pack.file('data.json');
-    if(dataFile) data = JSON.parse(await dataFile.async('text'));
-  } catch(e) { console.error(e); }
-  if(!data)
-    data = {
-      layers: [],
-      categories: [],
-      width: 512,
-      height: 512,
-    };
-  else {
-    if(!data.layers) data.layers = [];
-    if(!data.categories) data.categories = [];
-  }
-  return data;
 }

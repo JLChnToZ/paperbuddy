@@ -12,6 +12,7 @@ export function getOffscreenCanvas(width: number, height: number): HTMLCanvasEle
     for(const canvas of canvasCache) {
       canvas.width = width;
       canvas.height = height;
+      canvas.getContext('2d')?.clearRect(0, 0, width, height);
       canvasCache.delete(canvas);
       return canvas;
     }

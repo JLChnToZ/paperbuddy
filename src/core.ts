@@ -1,7 +1,7 @@
 import JSZip, { OutputType } from 'jszip';
 import { Data, LayerData, EntryData, PartData } from './data-structs';
-import { getCanvas, getOffscreenCanvas, canvasToBlobAsync } from './offscreen-canvas';
-import { mapClone, delay, EMPTY_GIF } from './utils';
+import { getCanvas, getOffscreenCanvas, canvasToBlobAsync, returnOffscreenCanvas } from './offscreen-canvas';
+import { mapClone, delay } from './utils';
 
 export interface Condition {
   index: number;
@@ -16,7 +16,7 @@ export interface ConditionMapping {
 }
 
 interface PreviewQueueEntry {
-  resolve: (value: string) => void;
+  resolve: (value: Blob | null) => void;
   reject: (err?: any) => void;
   index: number;
   value: number;
@@ -40,6 +40,22 @@ export class Core {
   private context?: CanvasRenderingContext2D | null;
   private offscreenCanvas: HTMLCanvasElement | OffscreenCanvas;
   private offscreenContext: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+
+  public get title() {
+    return this.data?.title || '';
+  }
+
+  public get description() {
+    return this.data?.description || '';
+  }
+
+  public get canvasWidth() {
+    return this.data?.width;
+  }
+
+  public get canvasHeight() {
+    return this.data?.height;
+  }
 
   public constructor(src?: Blob | number[] | ArrayBufferLike | string) {
     this.loadPackPromise = src ? JSZip.loadAsync(src) : Promise.resolve(new JSZip());
@@ -70,12 +86,20 @@ export class Core {
       this.context.globalAlpha = 1;
     } else {
       if(refreshLayers) this.refreshLayers();
-      for(const layer of data.layers) {
-        if(!this.enabledLayers.has(layer.fileName))
-          continue;
-        const image = this.images.get(layer.fileName);
-        if(image) this.context.drawImage(image, 0, 0);
-      }
+      this.compositeInner(data.layers, this.enabledLayers, this.context);
+    }
+  }
+
+  private compositeInner(
+    layers: LayerData[],
+    enabledLayers: Set<string>,
+    context: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+  ) {
+    for(const layer of layers) {
+      if(!enabledLayers.has(layer.fileName))
+        continue;
+      const image = this.images.get(layer.fileName);
+      if(image) context.drawImage(image, 0, 0);
     }
   }
 
@@ -137,8 +161,10 @@ export class Core {
     this.baseLayers.delete(part.layer);
   }
 
-  public getCategoryEnabled(index: number) {
-    const { conditions, value: selectedValue } = this.conditionMapping[index];
+  public getCategoryEnabled(conditionOrIndex: ConditionMapping | number) {
+    const { conditions, value: selectedValue } = typeof conditionOrIndex === 'number' ?
+      this.conditionMapping[conditionOrIndex] :
+      conditionOrIndex;
     for(const { index, value } of conditions) {
       if(index < 0)
         continue;
@@ -150,17 +176,26 @@ export class Core {
 
   protected refreshLayers() {
     this.enabledLayers.clear();
-    this.baseLayers.forEach(Set.prototype.add, this.enabledLayers);
-    for(let index = 0; index < this.conditionMapping.length; index++) {
-      const selection = this.conditionMapping[index];
-      if(!(selection.enabled = this.getCategoryEnabled(index)))
+    this.calcEnabledLayers(this.baseLayers, this.conditionMapping, this.enabledLayers);
+  }
+
+  private calcEnabledLayers(
+    baseLayers = this.baseLayers,
+    conditionMapping: ConditionMapping[],
+    enabledLayers = new Set<string>(),
+  ) {
+    baseLayers.forEach(Set.prototype.add, enabledLayers);
+    for(let index = 0; index < conditionMapping.length; index++) {
+      const selection = conditionMapping[index];
+      if(!(selection.enabled = this.getCategoryEnabled(selection)))
         continue;
       const { value } = selection;
-      const parts = this.conditionMapping[index].entry.entries?.[value]?.parts;
+      const parts = conditionMapping[index].entry.entries?.[value]?.parts;
       if(!parts) continue;
       for(const part of parts)
         this.enabledLayers.add(part.layer);
     }
+    return enabledLayers;
   }
 
   private async loadImage(fileName: string) {
@@ -179,8 +214,8 @@ export class Core {
     return await pack.generateAsync({ type });
   }
   
-  public requestPreview(index: number, value: number) {
-    return new Promise<string>((resolve, reject) => {
+  public getSelectionPreview(index: number, value: number) {
+    return new Promise<Blob | null>((resolve, reject) => {
       const entry: PreviewQueueEntry = {
         resolve, reject, index, value,
       };
@@ -191,6 +226,22 @@ export class Core {
         this.processPreviewQueue();
       }
     });
+  }
+
+  public async getPreview(selection?: number[]) {
+    const { data } = this;
+    if(!data) return null;
+    const canvas = getOffscreenCanvas(data.width, data.height);
+    try {
+      const context = canvas.getContext('2d');
+      if(!context) throw new Error('Cannot initialize canvas context.');
+      const conditionMapping = this.conditionMapping.map(mapCloneCondition, selection);
+      const enabledLayers = this.calcEnabledLayers(this.baseLayers, conditionMapping);
+      this.compositeInner(data.layers, enabledLayers, context);
+      return canvasToBlobAsync(canvas);
+    } finally {
+      returnOffscreenCanvas(canvas);
+    }
   }
   
   private async processPreviewQueue() {
@@ -218,11 +269,11 @@ export class Core {
           if(image)
             this.offscreenContext.drawImage(image, 0, 0);
         }
-        queueEntry.resolve(URL.createObjectURL(await canvasToBlobAsync(this.offscreenCanvas)));
+        queueEntry.resolve(await canvasToBlobAsync(this.offscreenCanvas));
       } catch(e) {
         console.error(e);
         console.log('Silently resolved as dummy image');
-        queueEntry.resolve(EMPTY_GIF);
+        queueEntry.resolve(null);
       }
     delete this.previewQueue;
   }
@@ -247,4 +298,10 @@ async function loadData(packPromise: PromiseLike<JSZip> | JSZip) {
     if(!data.categories) data.categories = [];
   }
   return data;
+}
+
+function mapCloneCondition(this: number[] | undefined, condition: ConditionMapping, index: number): ConditionMapping {
+  return Object.assign({}, condition, {
+    value: this?.[index] || 0,
+  } as Partial<ConditionMapping>);
 }

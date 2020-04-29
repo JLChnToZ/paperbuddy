@@ -20,7 +20,7 @@ export class Choose extends EventEmitter {
 
   constructor(
     private tab: Tabs,
-    private requestPreview: (index: number, value: number) => Promise<string>,
+    private getEntryPreview: (index: number, value: number) => Promise<Blob | null>,
   ) {
     super();
     tab
@@ -99,7 +99,8 @@ export class Choose extends EventEmitter {
   private async requestPreviewHandler({ display }: Option, index: number) {
     try {
       const originalSrc = display.src;
-      display.src = await this.requestPreview(this.index, index);
+      const blob = await this.getEntryPreview(this.index, index);
+      display.src = blob ? URL.createObjectURL(blob) : EMPTY_GIF;
       if(originalSrc.startsWith('blob:'))
         URL.revokeObjectURL(originalSrc);
     } catch {}

@@ -7,6 +7,7 @@ export interface Config {
   canReset?: boolean;
   canOpen?: boolean;
   canSave?: boolean;
+  controlDocumentTitle?: boolean;
 }
 
 export interface Data {
