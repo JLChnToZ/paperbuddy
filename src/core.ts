@@ -111,8 +111,8 @@ export class Core {
   protected reload(loadPackPromise: JSZip | Promise<JSZip>) {
     this.loadPackPromise = loadPackPromise;
     this.loadDataPromise = loadData(this.loadPackPromise);
-    this.init();
     this.context?.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.init();
   }
 
   protected async init() {
@@ -122,6 +122,7 @@ export class Core {
       this.layerData.set(layer.fileName, layer);
       this.loadImage(layer.fileName);
     }
+    this.composite();
   }
 
   public refresh() {

@@ -28,7 +28,7 @@ export class Choose extends EventEmitter {
     .addListener('hide', this.onHidden);
     this.header = tab.addTab(' ');
     this.root = tab.contentOf(this.header)!;
-    this.root.className = 'options';
+    this.root.classList.add('options');
     this.visible = tab.selectedIndex === tab.indexOf(this.header);
   }
 

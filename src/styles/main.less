@@ -28,6 +28,7 @@ html, body {
   flex-wrap: wrap;
   color: @text-color;
   padding: @padding-margin;
+  position: relative;
 
   .tabs-container {
     display: flex;
@@ -149,19 +150,6 @@ html, body {
       object-fit: contain;
       object-position: center;
     }
-    >.description-panel {
-      position: absolute;
-      z-index: 10;
-      display: none;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background-color: #0008;
-      &.show {
-        display: block;
-      }
-    }
   }
 
   .editor {
@@ -253,6 +241,20 @@ html, body {
     &:disabled {
       opacity: 50%;
       cursor: not-allowed;
+    }
+  }
+
+  .description-panel {
+    position: absolute;
+    z-index: 10;
+    display: none;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #0008;
+    &.show {
+      display: block;
     }
   }
 

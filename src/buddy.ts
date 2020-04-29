@@ -81,7 +81,7 @@ export class Buddy extends Core {
       button.addEventListener('click', this.onDownloadClick);
     }
     {
-      this.descriptionPanel = canvasContainer.appendChild(document.createElement('div'));
+      this.descriptionPanel = this.root.appendChild(document.createElement('div'));
       this.descriptionPanel.className = 'description-panel';
       const descriptionPanelFloat = this.descriptionPanel.appendChild(document.createElement('div'));
       descriptionPanelFloat.className = 'float-panel';
