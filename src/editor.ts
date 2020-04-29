@@ -232,6 +232,7 @@ export class Editor extends EventEmitter {
         dnd5: {
           multiSource: true,
           dragStart: alwaysTrue,
+          dragExpand: optAutoExpand,
           dragEnter: optDragEnter,
           dragDrop: this.optDrop,
         },
@@ -502,14 +503,27 @@ export class Editor extends EventEmitter {
       if(data.hitMode === 'after')
         data.otherNodeList.reverse();
       for(const node of data.otherNodeList)
-        if(node?.data?.nodeType === 'layer')
-          node.copyTo(targetNode, data.hitMode, this.optDropCopy);
-        else
-          node.moveTo(targetNode, data.hitMode);
-    } else if(data.otherNode?.data?.nodeType === 'layer')
-      data.otherNode.copyTo(targetNode, data.hitMode, this.optDropCopy);
-    else
-      data.otherNode?.moveTo(targetNode, data.hitMode);
+        this.opDropEach(node, targetNode, data);
+      return;
+    }
+    this.opDropEach(data.otherNode, targetNode, data);
+  }
+
+  private opDropEach(node: Fancytree.FancytreeNode, targetNode: Fancytree.FancytreeNode, data: any) {
+    switch(node?.data?.nodeType) {
+      case 'category':
+      case 'entry':
+      case 'part':
+        node.moveTo(targetNode, data.hitMode);
+        if(data.hitMode === 'over')
+          targetNode.setExpanded();
+        break;
+      case 'layer':
+        node.copyTo(targetNode, data.hitMode, this.optDropCopy);
+        if(data.hitMode === 'over')
+          targetNode.setExpanded();
+        break;
+    }
   }
   
   @Bind
@@ -603,45 +617,74 @@ async function onBlurTree(e: Event, data: Fancytree.EventData) {
   data.tree.activateKey(false);
 }
 
+function optAutoExpand(targetNode: Fancytree.FancytreeNode, data: any) {
+  if(data.otherNodeList) {
+    let containsAny: boolean = false;
+    for(const node of data.otherNodeList)
+      if(containsAny = optAutoExpandEach(node))
+        break;
+    return containsAny;
+  }
+  return optAutoExpandEach(data.otherNode);
+}
+
+function optAutoExpandEach(node: Fancytree.FancytreeNode) {
+  switch(node.data?.nodeType) {
+    case 'category':
+      return false;
+  }
+  return true;
+}
+
 function optDragEnter(targetNode: Fancytree.FancytreeNode, data: any) {
   if(data.otherNodeList) {
     let containsAny: boolean | string[] = false;
-    for(const node of data.otherNodeList) {
-      switch(node.data?.nodeType) {
-        case 'category':
-          if(targetNode.isRootNode())
-            containsAny = true;
-          else if((targetNode.data as any).nodeType === 'entry')
-            containsAny = ['before', 'after'];
-          break;
-        case 'part':
-        case 'entry':
-          if((targetNode.data as any).nodeType === 'entry')
-            containsAny = true;
-          break;
-        case 'layer':
-          if((targetNode.data as any).nodeType === 'entry') {
-            data.dropEffect = 'copy';
-            data.isMove = false;
-            containsAny = ['over'];
-          }
-          break;
-      }
-      if(containsAny)
+    for(const node of data.otherNodeList)
+      if(containsAny = opDragEnterEach(node, targetNode, data))
         break;
-    }
     return containsAny;
-  } else switch(data.otherNode?.data?.nodeType) {
+  }
+  if(data.otherNode)
+    return opDragEnterEach(data.otherNode, targetNode, data);
+  return false;
+}
+
+function opDragEnterEach(node: Fancytree.FancytreeNode, targetNode: Fancytree.FancytreeNode, data: any) {
+  data.dropEffect = 'move';
+  data.isMove = true;
+  switch(node.data?.nodeType) {
     case 'category':
-      return targetNode.isRootNode();
-    case 'part':
+      if(targetNode.isRootNode())
+        return true;
+      switch(targetNode.data?.nodeType) {
+        case 'category':
+          return ['before', 'after'];
+      }
+      break;
     case 'entry':
-      return (targetNode.data as any).nodeType === 'entry';
+      switch(targetNode.data?.nodeType) {
+        case 'category':
+          return ['over'];
+        case 'entry':
+          return true;
+        case 'part':
+          return ['before', 'after'];
+      }
+      break;
+    case 'part':
+      switch(targetNode.data?.nodeType) {
+        case 'entry':
+          return ['over'];
+        case 'part':
+          return ['before', 'after'];
+      }
+      break;
     case 'layer':
-      if((targetNode.data as any).nodeType === 'entry') {
-        data.dropEffect = 'copy';
-        data.isMove = false;
-        return ['over'];
+      switch(targetNode.data?.nodeType) {
+        case 'entry':
+          data.dropEffect = 'copy';
+          data.isMove = false;
+          return ['over'];
       }
       break;
   }
