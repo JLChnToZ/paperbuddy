@@ -168,9 +168,12 @@ export class Buddy extends Core {
 
   @Bind
   private showDescriptionPanel() {
-    this.descriptionTitle.textContent = this.data!.title || '';
-    if(this.data!.description)
-      this.descriptionContent.innerHTML = marked(this.data!.description);
+    const { data } = this;
+    if(!data) return;
+    const { title, description } = data;
+    this.descriptionTitle.textContent = title || '';
+    if(description)
+      this.descriptionContent.innerHTML = marked(description);
     else
       this.descriptionContent.textContent = '';
     this.descriptionPanel.classList.add('show');
@@ -190,6 +193,7 @@ export class Buddy extends Core {
     await super.init();
     if(!this.editor) this.refresh();
     this.updateDocumentTitle();
+    if(this.data?.description) this.showDescriptionPanel();
   }
 
   public repack<T extends OutputType>(type: T = 'blob' as T) {
