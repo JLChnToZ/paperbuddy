@@ -17,8 +17,8 @@ import {
 } from './data-structs';
 import { Tabs } from './tabs';
 import { generateUniqueId, Bind, preventDefault, delay } from './utils';
-import { LanguageDef } from './lang';
 import { openFile } from './file-helper';
+import { Gaia } from './gaia';
 
 const defaultOptions: Fancytree.FancytreeOptions = {
   extensions: ['edit', 'dnd5', 'multi', 'glyph'],
@@ -89,16 +89,19 @@ export class Editor extends EventEmitter {
     private loadPackPromise: Promise<JSZip> | JSZip,
     private images: Map<string, CanvasImageSource>,
     private loadDataPromise: Promise<Data>,
-    private lang: LanguageDef,
   ) {
     super();
 
     const editorTabsRoot = this.root.appendChild(document.createElement('div'));
     editorTabsRoot.addEventListener('submit', preventDefault, true);
     this.editorTabs = new Tabs(editorTabsRoot);
-    this.editorRoot = this.editorTabs.contentOf(this.editorTabs.addTab(lang.edit))!;
+    const editorTab = this.editorTabs.addTab('');
+    Gaia.bind(editorTab, 'textContent', 'edit');
+    this.editorRoot = this.editorTabs.contentOf(editorTab)!;
     this.editorRoot.className = 'editor';
-    this.playerRoot = this.editorTabs.contentOf(this.editorTabs.addTab(lang.play))!;
+    const playerTab = this.editorTabs.addTab('');
+    Gaia.bind(playerTab, 'textContent', 'play');
+    this.playerRoot = this.editorTabs.contentOf(playerTab)!;
     this.editorTabs.on('select', this.onEditTabSelect);
 
     const leftPanel = this.editorRoot.appendChild(document.createElement('div'));
@@ -108,7 +111,7 @@ export class Editor extends EventEmitter {
       const field = metaEditRoot.appendChild(document.createElement('div'));
       field.className = 'field';
       const label = field.appendChild(document.createElement('label'));
-      label.appendChild(document.createTextNode(lang.title));
+      Gaia.bind(label, 'textContent', 'title');
       label.htmlFor = generateUniqueId();
       this.titleEdit = field.appendChild(document.createElement('input'));
       this.titleEdit.id = label.htmlFor;
@@ -118,7 +121,7 @@ export class Editor extends EventEmitter {
       const field = metaEditRoot.appendChild(document.createElement('div'));
       field.className = 'field';
       const label = field.appendChild(document.createElement('label'));
-      label.appendChild(document.createTextNode(this.lang.description));
+      Gaia.bind(label, 'textContent', 'description');
       label.htmlFor = generateUniqueId();
       this.descriptionEdit = field.appendChild(document.createElement('textarea'));
       this.descriptionEdit.rows = 10;
@@ -129,7 +132,7 @@ export class Editor extends EventEmitter {
       const field = metaEditRoot.appendChild(document.createElement('div'));
       field.className = 'field';
       const label = field.appendChild(document.createElement('label'));
-      label.appendChild(document.createTextNode(lang.width));
+      Gaia.bind(label, 'textContent', 'width');
       label.htmlFor = generateUniqueId();
       this.widthEdit = field.appendChild(document.createElement('input'));
       this.widthEdit.id = label.htmlFor;
@@ -142,7 +145,7 @@ export class Editor extends EventEmitter {
       const field = metaEditRoot.appendChild(document.createElement('div'));
       field.className = 'field';
       const label = field.appendChild(document.createElement('label'));
-      label.appendChild(document.createTextNode(lang.height));
+      Gaia.bind(label, 'textContent', 'height');
       label.htmlFor = generateUniqueId();
       this.heightEdit = field.appendChild(document.createElement('input'));
       this.heightEdit.id = label.htmlFor;
@@ -157,19 +160,22 @@ export class Editor extends EventEmitter {
       {
         const caption = buttons.appendChild(document.createElement('span'));
         caption.className = 'caption';
-        caption.textContent = lang.layers;
+        Gaia.bind(caption, 'textContent', 'layers');
       }
       {
         const addLayerButton = buttons.appendChild(document.createElement('button'));
+        Gaia.bind(addLayerButton, 'title', 'addfile');
         const icon = addLayerButton.appendChild(document.createElement('i'));
         icon.className = `${glyphMaps._addClass} md-add`;
         addLayerButton.addEventListener('click', this.onClickAddLayer);
       }
       {
         this.deleteLayerButton = buttons.appendChild(document.createElement('button'));
+        Gaia.bind(this.deleteLayerButton, 'title', 'removefile');
         const icon = this.deleteLayerButton.appendChild(document.createElement('i'));
         icon.className = `${glyphMaps._addClass} md-delete`;
         this.deleteLayerButton.addEventListener('click', this.onClickDeleteLayer);
+        Gaia.bind(this.deleteLayerButton, 'title', 'removefile');
         this.deleteLayerButton.disabled = true;
       }
     }
@@ -203,16 +209,18 @@ export class Editor extends EventEmitter {
       {
         const caption = buttons.appendChild(document.createElement('span'));
         caption.className = 'caption';
-        caption.textContent = lang.options;
+        Gaia.bind(caption, 'textContent', 'options');
       }
       {
         const button = buttons.appendChild(document.createElement('button'));
+        Gaia.bind(button, 'title', 'addcat');
         const icon = button.appendChild(document.createElement('i'));
         icon.className = `${glyphMaps._addClass} md-add`;
         button.addEventListener('click', this.onClickAddOpt);
       }
       {
         this.deleteOptButton = buttons.appendChild(document.createElement('button'));
+        Gaia.bind(this.deleteOptButton, 'title', 'removecat');
         const icon = this.deleteOptButton.appendChild(document.createElement('i'));
         icon.className = `${glyphMaps._addClass} md-delete`;
         this.deleteOptButton.addEventListener('click', this.onClickDeleteOpt);
@@ -453,12 +461,12 @@ export class Editor extends EventEmitter {
     switch((selection[0]?.data as any)?.nodeType) {
       case 'part':
         selection[0]!.editCreateNode('after', {
-          title: this.lang.newcat,
+          title: Gaia.t('newcat'),
           icon: glyphMaps.entry,
           data: {
             nodeType: 'entry',
             refData: {
-              label: this.lang.newcat,
+              label: Gaia.t('newcat'),
             } as EntryData,
           },
         } as Fancytree.NodeData);
@@ -466,24 +474,24 @@ export class Editor extends EventEmitter {
       case 'category':
       case 'entry':
         selection[0]!.editCreateNode('child', {
-          title: this.lang.newcat,
+          title: Gaia.t('newcat'),
           icon: glyphMaps.entry,
           data: {
             nodeType: 'entry',
             refData: {
-              label: this.lang.newcat,
+              label: Gaia.t('newcat'),
             } as EntryData,
           },
         } as Fancytree.NodeData);
         break;
       default:
         this.optTree.getRootNode().editCreateNode('child', {
-          title: this.lang.newcat,
+          title: Gaia.t('newcat'),
           icon: glyphMaps.category,
           data: {
             nodeType: 'category',
             refData: {
-              label: this.lang.newcat,
+              label: Gaia.t('newcat'),
             } as CategoryData,
           },
         });

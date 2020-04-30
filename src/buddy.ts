@@ -4,12 +4,13 @@ import { Bind, mapRun } from './utils';
 import { Tabs } from './tabs';
 import { Data, Config } from './data-structs';
 import { Editor } from './editor';
-import { defaultLanguage, LanguageDef } from './lang';
+import { Gaia } from './gaia';
 import { Choose } from './choose';
 import marked from 'marked';
 import { saveFile, openFile } from './file-helper';
 import { Core } from './core';
 import { canvasToBlobAsync } from './offscreen-canvas';
+import { StringToStringMap } from './gaia/types';
 
 const classNameBase = 'material-icons md-24 ';
 
@@ -17,7 +18,6 @@ export class Buddy extends Core {
   public editor?: Editor;
   private controlDocumentTitle?: boolean;
   private orgDocumentTitle?: string;
-  private lang: LanguageDef;
 
   private root: HTMLElement;
   private selectionHandler: Choose[] = [];
@@ -33,14 +33,13 @@ export class Buddy extends Core {
     config: Config = {},
   ) {
     super(config.src);
-    this.lang = config.lang || defaultLanguage;
     this.root = typeof root === 'string' ? document.querySelector<HTMLElement>(root)! : root;
     this.root.classList.add('buddy');
     const canvasContainer = this.root.appendChild(document.createElement('div'));
     canvasContainer.className = 'preview-container';
     canvasContainer.appendChild(this.canvas);
     if(config.isEditor) {
-      this.editor = new Editor(this.root, this.loadPackPromise, this.images, this.loadDataPromise, this.lang)
+      this.editor = new Editor(this.root, this.loadPackPromise, this.images, this.loadDataPromise)
       .on('refresh', this.refresh)
       .on('composite', this.composite);
       this.playerRoot = this.editor.playerRoot;
@@ -52,30 +51,35 @@ export class Buddy extends Core {
     overlayButtons.className = 'overlay-buttons';
     if(config.isEditor && config.canReset) {
       const button = overlayButtons.appendChild(document.createElement('button'));
+      Gaia.bind(button, 'title', 'reset');
       const icon = button.appendChild(document.createElement('i'));
       icon.className = classNameBase + 'md-insert_drive_file';
       button.addEventListener('click', this.reset);
     }
     if(config.canOpen) {
       const button = overlayButtons.appendChild(document.createElement('button'));
+      Gaia.bind(button, 'title', 'open');
       const icon = button.appendChild(document.createElement('i'));
       icon.className = classNameBase + 'md-folder_open';
       button.addEventListener('click', this.onOpenClick);
     }
     if(config.isEditor && config.canSave) {
       const button = overlayButtons.appendChild(document.createElement('button'));
+      Gaia.bind(button, 'title', 'save');
       const icon = button.appendChild(document.createElement('i'));
       icon.className = classNameBase + 'md-save';
       button.addEventListener('click', this.onSaveClick);
     }
     {
       const button = overlayButtons.appendChild(document.createElement('button'));
+      Gaia.bind(button, 'title', 'info');
       const icon = button.appendChild(document.createElement('i'));
       icon.className = classNameBase + 'md-info';
       button.addEventListener('click', this.showDescriptionPanel);
     }
     {
       const button = overlayButtons.appendChild(document.createElement('button'));
+      Gaia.bind(button, 'title', 'takeshot');
       const icon = button.appendChild(document.createElement('i'));
       icon.className = classNameBase + 'md-photo_camera';
       button.addEventListener('click', this.onDownloadClick);
@@ -90,7 +94,7 @@ export class Buddy extends Core {
       this.descriptionContent.className = 'content';
       descriptionPanelFloat.appendChild(document.createElement('hr'));
       const closeButton = descriptionPanelFloat.appendChild(document.createElement('button'));
-      closeButton.textContent = this.lang.close;
+      Gaia.bind(closeButton, 'textContent', 'close');
       closeButton.addEventListener('click', this.hideDescriptionPanel);
     }
     if(config.controlDocumentTitle) {
@@ -199,5 +203,9 @@ export class Buddy extends Core {
   public repack<T extends OutputType>(type: T = 'blob' as T) {
     this.editor?.syncData();
     return super.repack(type);
+  }
+
+  public static setLang(locale: string, translation?: StringToStringMap | Promise<StringToStringMap>) {
+    return Gaia.setLocale(locale, translation);
   }
 }

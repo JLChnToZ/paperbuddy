@@ -1,23 +1,49 @@
-export type LanguageKeys = 'edit' | 'play' |
-  'title' | 'description' | 'width' | 'height' | 'addfile' | 'addlayer' |
-  'newcat' | 'parts' | 'layers' | 'options' | 'close';
+import { Gaia } from './gaia';
 
-export type LanguageDef = {
-  [k in LanguageKeys]: string;
-};
-
-export const defaultLanguage: LanguageDef = {
-  edit: 'Edit',
-  play: 'Play',
-  title: 'Title',
-  description: 'Description',
-  width: 'Width',
-  height: 'Height',
-  addfile: 'Add File..',
-  addlayer: 'Add Layer to Option List',
-  newcat: 'New Category',
-  parts: 'Parts',
-  layers: 'Layers',
-  options: 'Options',
-  close: 'OK & Close',
-};
+Gaia.init({
+  supportedLocales: [
+    ['en', {
+      edit: 'Edit',
+      play: 'Play',
+      title: 'Title',
+      description: 'Description',
+      width: 'Width',
+      height: 'Height',
+      addfile: 'Add Layer..',
+      removefile: 'Remove Selected Layer',
+      addcat: 'Add Selection Category/Item',
+      removecat: 'Remove Selected Category/Item',
+      newcat: 'New Category',
+      layers: 'Layers',
+      options: 'Options',
+      close: 'OK & Close',
+      reset: 'Reset',
+      open: 'Open Pack',
+      save: 'Save Pack',
+      info: 'Info',
+      takeshot: 'Take a shot',
+    }],
+    ['zh', {
+      edit: '編輯',
+      play: '遊玩',
+      title: '標題',
+      description: '描述',
+      width: '寬度',
+      height: '高度',
+      addfile: '加入圖層',
+      removefile: '移除圖層',
+      addcat: '加入選項/群組',
+      removecat: '移除選擇的選項/群組',
+      newcat: '新類別',
+      layers: '圖層',
+      options: '選項',
+      close: '知道了',
+      reset: '重置',
+      open: '開啟紙娃娃素材包',
+      save: '儲存紙娃娃素材包',
+      info: '資訊',
+      takeshot: '拍照',
+    }],
+  ],
+  fallbackLocale: 'en',
+});

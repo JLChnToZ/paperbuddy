@@ -1,0 +1,2 @@
+The content in this directory are based on [Gaia](https://github.com/ashour/gaia-i18n-part-1) with modifications.  
+For more information, please visit https://phrase.com/blog/posts/roll-your-own-javascript-i18n-library-with-typescript-part-1/.

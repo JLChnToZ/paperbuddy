@@ -1,4 +1,5 @@
 import { Buddy } from './buddy';
+import './lang';
 new Buddy(document.body, {
   isEditor: true,
   canReset: true,
