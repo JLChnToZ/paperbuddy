@@ -1,9 +1,9 @@
 export interface Config {
   isEditor?: boolean;
-  src?: Blob | Uint8Array | ArrayBuffer | number[] | string;
+  src?: Blob | ArrayBufferLike | number[] | string;
   canReset?: boolean;
-  canOpen?: boolean;
-  canSave?: boolean;
+  canOpen?: boolean | (() => Promise<Blob | ArrayBufferLike | number[] | string>);
+  canSave?: boolean | (() => Promise<void>);
   controlDocumentTitle?: boolean;
 }
 

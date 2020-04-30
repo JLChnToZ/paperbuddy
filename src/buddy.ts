@@ -24,6 +24,8 @@ export class Buddy extends Core {
   private descriptionPanel: HTMLDivElement;
   private descriptionTitle: HTMLHeadingElement;
   private descriptionContent: HTMLDivElement;
+  private openCb?: () => Promise<string | Blob | ArrayBufferLike | number[]>;
+  private saveCb?: () => Promise<void>;
 
   private playerRoot: HTMLElement;
   private playerTabs: Tabs;
@@ -62,6 +64,8 @@ export class Buddy extends Core {
       const icon = button.appendChild(document.createElement('i'));
       icon.className = classNameBase + 'md-folder_open';
       button.addEventListener('click', this.onOpenClick);
+      if(typeof config.canOpen === 'function')
+        this.openCb = config.canOpen;
     }
     if(config.isEditor && config.canSave) {
       const button = overlayButtons.appendChild(document.createElement('button'));
@@ -69,6 +73,8 @@ export class Buddy extends Core {
       const icon = button.appendChild(document.createElement('i'));
       icon.className = classNameBase + 'md-save';
       button.addEventListener('click', this.onSaveClick);
+      if(typeof config.canSave === 'function')
+        this.saveCb = config.canSave;
     }
     {
       const button = overlayButtons.appendChild(document.createElement('button'));
@@ -149,25 +155,51 @@ export class Buddy extends Core {
   }
 
   @Bind
-  public reset() {
-    this.reload(new JSZip());
+  public async reset() {
+    try {
+      this.root.classList.add('loading');
+      await this.reload(new JSZip());
+    } catch(e) {
+      console.error(e);
+    } finally {
+      this.root.classList.remove('loading');
+    }
   }
 
   @Bind
   private async onOpenClick() {
-    const [pack] = await openFile({ accept: '*.pack' });
-    if(pack) this.reload(JSZip.loadAsync(pack));
+    try {
+      this.root.classList.add('loading');
+      const pack = this.openCb ?
+        (await this.openCb()) :
+        (await openFile({ accept: '*.pack' }))[0];
+      if(pack) await this.reload(JSZip.loadAsync(pack));
+    } catch(e) {
+      console.error(e);
+    } finally {
+      this.root.classList.remove('loading');
+    }
   }
 
   protected reload(loadPackPromise: JSZip | Promise<JSZip>) {
-    super.reload(loadPackPromise);
+    const promise = super.reload(loadPackPromise);
     this.editor?.reset(this.loadPackPromise, this.loadDataPromise);
+    return promise;
   }
 
   @Bind
   private async onSaveClick() {
-    const blob = await this.repack('blob');
-    if(blob) saveFile(blob, { fileName: `${Date.now()}.pack` });
+    try {
+      this.root.classList.add('loading');
+      if(this.saveCb)
+        return await this.saveCb();
+      const blob = await this.repack('blob');
+      if(blob) saveFile(blob, { fileName: `${Date.now()}.pack` });
+    } catch(e) {
+      console.error(e);
+    } finally {
+      this.root.classList.remove('loading');
+    }
   }
 
   @Bind

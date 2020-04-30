@@ -112,7 +112,7 @@ export class Core {
     this.loadPackPromise = loadPackPromise;
     this.loadDataPromise = loadData(this.loadPackPromise);
     this.context?.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    this.init();
+    return this.init();
   }
 
   protected async init() {
