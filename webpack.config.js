@@ -10,6 +10,9 @@ module.exports = {
   output: {
     filename: 'buddy.js',
     path: __dirname + '/dist',
+    library: 'Buddy',
+    libraryTarget: 'umd',
+    libraryExport: 'default',
   },
 
   // Enable sourcemaps for debugging webpack's output.
@@ -79,7 +82,17 @@ module.exports = {
       jQuery: 'jquery'
     }),
     new HtmlWebpackPlugin({
+      template: 'node_modules/html-webpack-template/index.ejs',
       title: 'Paper Buddy',
+      window: {
+        demo: {
+          isEditor: true,
+          canOpen: true,
+          canSave: true,
+          canReset: true,
+          controlDocumentTitle: true,
+        },
+      },
       hash: true,
     }),
     new MiniCssExtractPlugin(),

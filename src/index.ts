@@ -1,9 +1,7 @@
 import { Buddy } from './buddy';
 import './lang';
-new Buddy(document.body, {
-  isEditor: true,
-  canReset: true,
-  canOpen: true,
-  canSave: true,
-  controlDocumentTitle: true,
-});
+export default Buddy;
+if((window as any).demo) {
+  const container = document.body.appendChild(document.createElement('div'));
+  new Buddy(container, (window as any).demo);
+}
