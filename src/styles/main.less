@@ -3,6 +3,19 @@
 @import '~@material-icons/font/css/outline.css';
 
 @fancy-cst-size: 14px;
+@border-color: #A868;
+@border-width: 1.5px;
+@tab-background-color: #FEC;
+@button-background-color: #FFD;
+@input-background-color: #FFF8;
+@selected-color: #840;
+@text-color: #642;
+@border-radius: 0.45em;
+@padding-margin: 0.25em;
+@highlight-background-color: #8408;
+@highlight-fore-color: #FFF;
+@scrollbar-size: 0.4em;
+@scrollbar-color: #840;
 
 html, body {
   height: 100%;
@@ -11,17 +24,6 @@ html, body {
 }
 
 .buddy {
-  @border-color: #A868;
-  @border-width: 1.5px;
-  @tab-background-color: #FEC;
-  @button-background-color: #FFD;
-  @input-background-color: #FFF8;
-  @selected-color: #840;
-  @text-color: #642;
-  @border-radius: 0.45em;
-  @padding-margin: 0.25em;
-  @highlight-background-color: #8408;
-  @highlight-fore-color: #FFF;
 
   font-family: sans-serif;
   display: flex;
@@ -175,9 +177,10 @@ html, body {
     .tree {
       flex: auto;
       padding: @padding-margin;
-      ul.fancytree-container {
-        overflow-y: auto;
-      }
+      overflow-y: auto;
+      position: relative;
+      width: initial;
+      height: initial;
     }
   }
 
@@ -242,6 +245,12 @@ html, body {
       opacity: 50%;
       cursor: not-allowed;
     }
+  }
+
+  .fancytree-container {
+    min-height: 1em;
+    max-height: 25em;
+    overflow-y: auto;
   }
 
   .description-panel {
@@ -326,9 +335,33 @@ html, body {
   &, & * {
     box-sizing: border-box;
   }
+}
 
-  ::selection {
-    background-color: @highlight-background-color;
-    color: @highlight-fore-color;
+::selection {
+  background-color: @highlight-background-color;
+  color: @highlight-fore-color;
+}
+
+::-webkit-scrollbar {
+  padding: @padding-margin;
+  width: @scrollbar-size;
+  height: @scrollbar-size;
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-track:hover {
+  background-color: fadeout(@scrollbar-color, 75%);
+  border-radius: @scrollbar-size;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border: none;
+  border-radius: @scrollbar-size;
+  :focus&, :focus>&, :hover&, :hover>&, :active&, :active>&, .focus & {
+    background-color: fadeout(@scrollbar-color, 50%);
+  }
+  :hover {
+    background-color: @scrollbar-color;
   }
 }

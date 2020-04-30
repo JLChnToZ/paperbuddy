@@ -122,7 +122,7 @@ export class Core {
       this.layerData.set(layer.fileName, layer);
       this.loadImage(layer.fileName);
     }
-    this.composite();
+    this.refresh();
   }
 
   public refresh() {
@@ -135,6 +135,7 @@ export class Core {
     this.conditionMapping = [];
     this.conditionAcc = [{ index: -1 }];
     data.categories.forEach(this.refreshEntry, this);
+    this.composite();
   }
 
   private refreshLayer(layer: LayerData) {

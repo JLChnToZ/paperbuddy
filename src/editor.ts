@@ -121,6 +121,7 @@ export class Editor extends EventEmitter {
       label.appendChild(document.createTextNode(this.lang.description));
       label.htmlFor = generateUniqueId();
       this.descriptionEdit = field.appendChild(document.createElement('textarea'));
+      this.descriptionEdit.rows = 10;
       this.descriptionEdit.id = label.htmlFor;
       this.descriptionEdit.addEventListener('input', this.onDescriptionChange);
     }
@@ -313,6 +314,8 @@ export class Editor extends EventEmitter {
     this.heightEdit.value = this.data.height.toString();
     this.optTree.reload(this.data.categories.map(this.cat2Node, this));
     this.layerTree.reload(this.data.layers.map(layer2Node));
+    await delay(100);
+    if(this.isEditMode) this.emit('composite', true, this.getSelectedLayers());
   }
 
   @Bind
