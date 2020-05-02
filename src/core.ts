@@ -1,4 +1,4 @@
-import JSZip, { OutputType } from 'jszip';
+import JSZip, { loadAsync as loadPack, OutputType } from 'jszip';
 import { Data, LayerData, EntryData, PartData } from './data-structs';
 import { getCanvas, getOffscreenCanvas, canvasToBlobAsync, returnOffscreenCanvas } from './offscreen-canvas';
 import { mapClone, delay } from './utils';
@@ -57,8 +57,8 @@ export class Core {
     return this.data?.height;
   }
 
-  public constructor(src?: Blob | number[] | ArrayBufferLike | string) {
-    this.loadPackPromise = src ? JSZip.loadAsync(src) : Promise.resolve(new JSZip());
+  public constructor(src?: Blob | number[] | ArrayBufferLike | string | Promise<Blob | number[] | ArrayBufferLike | string>) {
+    this.loadPackPromise = src ? src instanceof Promise ? src.then(loadPack) : loadPack(src) : Promise.resolve(new JSZip());
     this.loadDataPromise = loadData(this.loadPackPromise);
     this.canvas = getCanvas(512, 512);
     this.offscreenCanvas = getOffscreenCanvas(512, 512);
@@ -66,7 +66,7 @@ export class Core {
     if(!offscreenContext)
       throw new Error('Failed to initialize 2D canvas context.');
     this.offscreenContext = offscreenContext;
-    this.init();
+    this.firstRunAsync();
   }
   
   public composite(refreshLayers = true, selectedLayers?: string[]) {
@@ -113,6 +113,10 @@ export class Core {
     this.loadDataPromise = loadData(this.loadPackPromise);
     this.context?.clearRect(0, 0, this.canvas.width, this.canvas.height);
     return this.init();
+  }
+
+  protected firstRunAsync() {
+    this.init();
   }
 
   protected async init() {

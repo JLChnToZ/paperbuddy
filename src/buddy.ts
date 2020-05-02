@@ -1,6 +1,6 @@
 import './styles/main.less';
-import JSZip, { OutputType } from 'jszip';
-import { Bind, mapRun } from './utils';
+import JSZip, { loadAsync as loadPack, OutputType } from 'jszip';
+import { Bind, mapRun, delay } from './utils';
 import { Tabs } from './tabs';
 import { Data, Config } from './data-structs';
 import { Editor } from './editor';
@@ -36,7 +36,7 @@ export class Buddy extends Core {
   ) {
     super(config.src);
     this.root = typeof root === 'string' ? document.querySelector<HTMLElement>(root)! : root;
-    this.root.classList.add('buddy');
+    this.root.classList.add('buddy', 'loading');
     const canvasContainer = this.root.appendChild(document.createElement('div'));
     canvasContainer.className = 'preview-container';
     canvasContainer.appendChild(this.canvas);
@@ -109,6 +109,16 @@ export class Buddy extends Core {
     }
   }
 
+  protected async firstRunAsync() {
+    try {
+      await super.init();
+    } finally {
+      while(!this.root)
+        await delay(100);
+      this.root.classList.remove('loading');
+    }
+  }
+
   @Bind
   public refresh() {
     super.refresh();
@@ -173,7 +183,7 @@ export class Buddy extends Core {
       const pack = this.openCb ?
         (await this.openCb()) :
         (await openFile({ accept: '*.pack' }))[0];
-      if(pack) await this.reload(JSZip.loadAsync(pack));
+      if(pack) await this.reload(loadPack(pack));
     } catch(e) {
       console.error(e);
     } finally {

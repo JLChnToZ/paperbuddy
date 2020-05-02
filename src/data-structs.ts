@@ -1,6 +1,6 @@
 export interface Config {
   isEditor?: boolean;
-  src?: Blob | ArrayBufferLike | number[] | string;
+  src?: Blob | ArrayBufferLike | number[] | string | Promise<Blob | number[] | ArrayBufferLike | string>;
   canReset?: boolean;
   canOpen?: boolean | (() => Promise<Blob | ArrayBufferLike | number[] | string>);
   canSave?: boolean | (() => Promise<void>);

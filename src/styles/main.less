@@ -24,13 +24,17 @@ html, body {
 }
 
 .buddy {
-
   font-family: sans-serif;
   display: flex;
   flex-wrap: wrap;
   color: @text-color;
   padding: @padding-margin;
   position: relative;
+
+  &.loading {
+    opacity: 0.5;
+    pointer-events: none;
+  }
 
   .tabs-container {
     display: flex;
