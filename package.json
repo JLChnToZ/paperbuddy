@@ -35,7 +35,7 @@
     "@types/uuid": "^7.0.3",
     "jquery": "^3.5.0",
     "jquery.fancytree": "^2.35.0",
-    "jszip": "^3.4.0",
+    "jszip": "^3.7.0",
     "marked": "^1.0.0",
     "reset-css": "^5.0.1",
     "tslib": "^1.11.1",
